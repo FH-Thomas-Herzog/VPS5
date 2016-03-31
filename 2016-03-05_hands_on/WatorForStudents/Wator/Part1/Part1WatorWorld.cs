@@ -1,10 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
-namespace VSS.Wator.Original
+namespace VSS.Wator.Part1
 {
+    public enum Direction
+    {
+        UP, DOWN, LEFT, RIGHT
+    }
+
     // object-oriented implementation of the wator world simulation
-    public class OriginalWatorWorld : IWatorWorld
+    public class Part1WatorWorld : IWatorWorld
     {
         // random number generator
         private Random random;
@@ -36,8 +42,11 @@ namespace VSS.Wator.Original
         public int SharkBreedEnergy { get; private set; }
         #endregion
 
+        private IList<Direction> directionList = new List<Direction>() { Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT };
+        private readonly Point INVALID_POINT = new Point(-1, -1);
+
         // create and init a new wator world with the given settings
-        public OriginalWatorWorld(Settings settings)
+        public Part1WatorWorld(Settings settings)
         {
             // copy settings 
             Width = settings.Width;
@@ -165,103 +174,58 @@ namespace VSS.Wator.Original
             return bitmap;
         }
 
-        // !!!!!!!!!!!!
-        // Maybe random access to neighbour. If valid, we can return, otherwise check next neighbour, if invalid.
-        // !!!!!!!!!!!!
         // find all neighbouring cells of the given position that contain an animal of the given type
-        public Point[] GetNeighbors(Type type, Point position)
+        public Point GetNeighbors(Type type, Point position)
         {
-            Point[] neighbors = new Point[4];
-            int neighborIndex;
-            int i, j;
+            // Could be randomly accessed, but this cost too much.
+            for (int i = 0; i < 4; i++)
+            {
+                int newX, newY;
+                newX = position.X;
+                newY = position.Y;
+                switch (directionList[i])
+                {
+                    case Direction.UP:
+                        newY++;
+                        break;
+                    case Direction.DOWN:
+                        newY++;
+                        break;
+                    case Direction.RIGHT:
+                        newX++;
+                        break;
+                    case Direction.LEFT:
+                        newX++;
+                        break;
+                }
 
-            // counter for the number of cells of the correct type
-            neighborIndex = 0;
-            // look up
-            i = position.X;
-            j = (position.Y + Height - 1) % Height;
-            // if we look for empty cells (null) we don't have to check the type using instanceOf
-            if ((type == null) && (Grid[i, j] == null))
-            {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
-            }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
-            {
-                // using instanceOf to check if the type of the animal on grid cell (i/j) is either a shark of a fish
-                // animals that moved in this iteration onto the given cell are not considered
-                // because the simulation runs in discrete time steps
-                if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
+                newX = (newX > (Width - 1)) ? 0 : newX;
+                newY = (newY > (Height - 1)) ? 0 : newY;
+
+                Animal item = Grid[newX, newY];
+                // Empty cell searched
+                if (type == null)
                 {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    if (item == null)
+                    {
+                        return new Point(newX, newY);
+                    }
                 }
-            }
-            // look right
-            i = (position.X + 1) % Width;
-            j = position.Y;
-            if ((type == null) && (Grid[i, j] == null))
-            {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
-            }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
-            {
-                if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
+                // Search for item of type
+                else if ((type.IsInstanceOfType(item)))
                 {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
-                }
-            }
-            // look down
-            i = position.X;
-            j = (position.Y + 1) % Height;
-            if ((type == null) && (Grid[i, j] == null))
-            {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
-            }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
-            {
-                if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
-                {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
-                }
-            }
-            // look left
-            i = (position.X + Width - 1) % Width;
-            j = position.Y;
-            if ((type == null) && (Grid[i, j] == null))
-            {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
-            }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
-            {
-                if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
-                {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    return new Point(newX, newY);
                 }
             }
 
-            // create a result array of the correct length containing only
-            // the discovered cells of the correct type
-            Point[] result = new Point[neighborIndex];
-
-            // !!!!!!!
-            // Do we really need to copy the array here ??
-            // !!!!!!!
-            Array.Copy(neighbors, result, neighborIndex);
-            return result;
+            return INVALID_POINT;
         }
 
         // select a random neighbouring cell that contains an animal (or null) of the given type
         public Point SelectNeighbor(Type type, Point position)
         {
             // first determine _all_ neighbours of the given type
-            Point[] neighbors = GetNeighbors(type, position);
+            Point[] neighbors = new Point[] { GetNeighbors(type, position) };
             if (neighbors.Length > 1)
             {
                 // if more than one cell has been found => return a randomly selected cell

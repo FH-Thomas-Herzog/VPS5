@@ -6,45 +6,109 @@ v1.0, March 31 2016
 Folgendes Dokument beschäfftigst sich mit der Analyse und verbessurng des C# Programms 'Waterworld'. +
 Im ersten Kapitel xref:runtime-analysis[Laufzeitanalyse] wird die Laufzeit mit mehreren Durchläufen mit einer bestimmten Konfiguration betrachtet.
 
-[[runtime-analysis]]
-### Laufzeit-Analyse
-Folgendes Bild zeigt die festegestzte Konfiguration für die Testdurchläufe. + 
-
-image::./images/test-settings.JPG[Testkonfiguration]
-Mit dieser Konfiguration wurden *10* Durchläufe vorgenommen, deren ERgebnisse folgend tabelarisch aufgelistet sind.
-
-.Ergebnisse der Testdurchläufe
-
-image::./images/original_run_10_times.JPG[Testdurchläufe]
-
 ### 'Heap'-Analyse
 Dieser Abschnitt beschäftigt sich mit der 'Heap'-Analyse, die aufzeigen wird, wie der Heap sich zur Programmlaufzeit verhält und welche Objekte am 'Heap' in welcher Verteilung vorzufinden sind. 
 
 #### Originalversion
 Folgender Teil zeigt die Analyseergebnisse der Originalversion.
 
-image::./images/original-analysis-heap-allocation.JPG[Analyseergebnisse]
+[[original-analysis-heap]]
+.Ergebnisse der 'Heap'-Analyse der Originalversion
+image::./images/original-analysis-heap.JPG[alt="Analyseergebnisse der Originalversion"]
 
-Eklatant fällt hier auf, dass es sher viele *'Point'* Instanzen am Heap gibt, die sehr kurzlebig sind und daher den 'Grabage Collector' stark belasten.
+Eklatant fällt hier auf, dass es sher viele `Point` Instanzen am Heap gibt, die sehr kurzlebig sind und daher den 'Grabage Collector' stark belasten. Daher sollte hier angesetzt werden, um zu versuchen diese `Point` Instanzen zu vermeiden. + 
 
+Des Weiteren sieht man in Abbildung <<original-analysis-heap>>, dass die Methode `GetNeighbors(Type, Point)` die meisten `Point` Instanzen produziert, daher sollte man hier zuerst ansetzen. In der Methode `GetNeighbors(Type, Point)` werden alle NAchbarn gesucht und die `Animal` Instanz entscheidet durch Zufall welcher Nachbar genommen wird.
 
-#### Erste Optimierungen 
-Folgender Teil zeigt die Analyseergebnisse nach dem ersten Optimierungsversuch.
+[[part-1-analysis-heap]]
+#### Ergebnisse von: 'Point Instanzen vermeiden'
+Folgende Teil zeigt die Analyseergebnisse der 'Heap'-Analyse der ersten Verbesserungen.
 
+.Ergebnisse von: Point Instanzen vermeiden
+image::./images/part-1-analysis-heap.JPG[Analyseergebnisse der ersten Verbesserung]
 
-//TODO: Add heap images here and tables with the objects represented on the heap with which count.
+Diese Verbesserung hat erreicht das anstatt *'~ 94 %'* nur mehr *'~ 84 %'* der Objekte am 'Heap' 'Point'-Instanzen sind. Dadurch ist der 'Garbage Collector' weniger stark ausgelastet, was einen positiven Effekt auf das Laufzeitverhalten hat. +
 
-[[software-analysis]]
-## Programmanalyse
-hello
+Trotzdem sei angemerkt, dass sich herausgestellt hat, dass der Ansatz des 'Random'-Zugriff auf die 'Direction' beim Ermitteln der Nachbarn die Laufzeit um *'~ 500ms'* verschlechtert, daher wurde der Randomzugriff entfernt. Dadurch wird aber immer in die gleiche Richtung gegangen bzw nach Nachbanr gesucht, was zur Folge hat, dass dies auf der grafischen Asugabe sichtbar wird. 
 
-[[refactore-part-1]]# Umstrukturierung Teil 1||Std. Deviation|Run 1|Run 2
-hello
+<<<
+[[part-2-analysis-heap]]
+#### Ergebnisse von: 'SelectNeighbor entfernen'
+Folgender Teil zeigt die Analyseergebnisse der 'Heap'-Analyse der Verbesserung 'SelectNeighbor entfernen'.
 
-[[refactore-part-2]]
-## Umstrukturierung Teil 2
-hello
+.Ergebnisse von: SelectNeighbor entfernen
+image::./images/part-2-analysis-heap.JPG[Analyseergebnisse der ersten Verbesserung]
 
-[[refactore-part-3]]
-## Umstrukturierung Teil 3
-hello
+Durch das Entfernen der Methode `SelectNeighbor(Type, Point)` sind die 'Point'-Objekte nicht mehr die dominanten Objekte am 'Heap' sondern 'Fish'-Objekte, die aber nicht zu vermeiden sind, da es nur soviele Fische am 'Heap' gibt als wie in der Matrix. Und die 'Fish'-Objekte sind langläbigere Objelkte als die 'Point'-Objekte.
+
+<<<
+[[runtime-analysis]]
+### Laufzeit-Analyse
+Folgendes Bild zeigt die festegestzte Konfiguration für die Testdurchläufe. + 
+
+image::./images/test-settings.JPG[Testkonfiguration]
+Mit dieser Konfiguration wurden *10* Durchläufe vorgenommen, deren Ergebnisse folgend tabelarisch aufgelistet sind.
+
+[[original-analysis-runtime]]
+#### Ergebnisse von: 'Originalversion'
+Folgende Teil zeigt die Analyseergebnisse der 'Runtime'-Analyse der Originalversion.
+
+.Ergebnisse vom: Originalversion
+image::./images/original_run_10_times.JPG[Testdurchläufe]
+
+[[part-1-analysis-runtime]]
+#### Ergebnisse von: 'Point Instanzen vermeiden'
+Folgende Teil zeigt die Analyseergebnisse der 'Runtime'-Analyse dieser angewandten Verbesserung.
+
+.Ergebnisse von: Point Instanzen vermeiden
+image::./images/part_1_run_10_times.JPG[Testdurchläufe]
+
+Mit dieser ersten Verbesserung wurde die Laufzeit der Anwendung um *'~ 0.7 sec'* verbessert.
+
+<<<
+[[part-2-analysis-runtime]]
+#### Ergebnisse von: 'SelectNeighbor entfernen'
+Folgende Teil zeigt die Analyseergebnisse der 'Runtime'-Analyse dieser angewandten Verbesserung.
+
+.Ergebnisse von: SelectNeighbor entfernen
+image::./images/part_2_run_10_times.JPG[Testdurchläufe]
+
+Mit dieser zweiten Verbesserung wurde die Laufzeit der Anwendung um *'~ 1.4 sec'* verbessert.
+
+<<<
+[[part-3-analysis-runtime]]
+#### Ergebnisse von: 'GenerateMatrix, RandomizeMatrix modifizieren'
+Folgende Teil zeigt die Analyseergebnisse der 'Runtime'-Analyse dieser angewandten Verbesserung.
+
+.Ergebnisse von: GenerateMatrix, RandomizeMatrix modifizieren
+image::./images/part_3_run_10_times.JPG[Testdurchläufe]
+
+Mit dieser letzten Verbesserung wurde die Laufzeit der Anwendung um *'~ 1.8 sec'* verbessert.
+
+<<<
+### Quelltextverbesserungen 
+Folgender Teil beschäftigt sich mit den Optimierungen, die angewendet wurden um das Laufzeitverhalten zu verbessern.
+
+#### Point Instanzen vermeiden
+Die Methode `GetNeighbors(Type, Point)` wurde dahingehend werändert, dass nicht mehr alle Nachbarn besucht und zurückgeliefert werden, sondern dass per Zufall solange die möglichen Nachbarn besucht werden bis das erwartete Resultat eintritt. DasDer erste gefundene Nachbar, der die Anforderungen erfüllt, wird zurückgeliefert. +
+
+Siehe hierzu die folgenden Methoden in 'Part1WatorWorld':
+
+* 'public Point GetNeighbors(Type type, Point position)'
+* 'public Point SelectNeighbor(Type type, Point position)'
+
+In der Methode `SelectNeighbor` wurde lediglich folgende Änderung vorgenommen + 
+`Point[] neighbors = new Point[] { GetNeighbors(type, ref position) };`. +
+
+Durch die Änderungen in `GetNEighbors(Type, Point)` wird den `Animal` Instanzen verwehrt zu entschieden in welchge Richtung sie gehen wollen. Dieser Ansatz wurde aber gewählt, da er gut für die Verbesserung des Laufzeitverhaltens ist. Siehe dazu folgende Analyseergebnisse <<part-1-analysis-heap>>
+
+#### SelectNeighbor entfernen
+Nachdem die Methode `GetNeighbors(Type, Point)` so geändert wurde, dass hbier bereits eine einzige Position eines Nachbarn zurückgelifert wird, kann auf die Methode 'SelectNeighbor' verzichtet werden, da die implementierte Logik keine Anwendung mehr findet. Im Zuge dessen wird die Methode `GetNeighbors` unbenannt in `GetNeighbor`, da diese Methode nurmehr ein Resultat und kein Array mehr zurückliefert.
+
+#### GenerateRandomMatrix, RandomizeMatrix modifizieren
+Anstatt ein zweidimensionales Array zu verwenden in dem die Indixes abgebildet sind, wird eine Liste von 'Point'-Objekten beim erstamligen Erstellen der Matric erstellt und bei jedem Aufruf der Methode `ExecuteStep` zufällig neu geordnet. Es werden zwar alle Positionen auf der Matrix über 'Point'-Objekte abgebildet, aber diese 'Point'-Objekte bleiben über die Laufzeit erhalten und werden daher vom 'Garbage Collector' nicht beachtet, da immer eine Referenz auf diese Objekte besteht. Das zufällige Besuchen der Positionen bleibt gewährleistet. Des Weiteren werden alle 'Animal'-Objekte, die als in der MEthode `ExecuteStep` als 'Moved' markiert wurden in einer Liste gespeichert und nachdem alle Positionen besucht wurden 'commited'. Dadurch wird ein weiteres Iterieren über alle Positionen vermieden.
+
+Siehe dazu die folgenden Methoden in der Klasse 'Part3WatorWorld':
+
+* `ExecuteStep`
+* `ShuffelPoints` (Ersetzt RandomizeMatrix)
