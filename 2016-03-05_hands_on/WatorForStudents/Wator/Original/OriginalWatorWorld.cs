@@ -24,7 +24,7 @@ namespace VSS.Wator.Original
         // height (number of cells) of the world
         public int Height { get; private set; }
         // the cells of the world (2D-array of animal (fish or shark), empty cells have the value null)
-        public Animal[,] Grid { get; private set; }
+        public MatrixItem[,] Grid { get; private set; }
 
         // simulation parameters
         public int InitialFishPopulation { get; private set; }
@@ -52,7 +52,7 @@ namespace VSS.Wator.Original
             rgbValues = new byte[Width * Height * 4];
 
             random = new Random();
-            Grid = new Animal[Width, Height];
+            Grid = new MatrixItem[Width, Height];
 
             // initialize the population by placing the required number of shark and fish
             // randomly on the grid
@@ -68,11 +68,11 @@ namespace VSS.Wator.Original
                     int value = random.Next(Width * Height);
                     if (value < InitialFishPopulation)
                     {
-                        Grid[i, j] = new Fish(this, new Point(i, j), random.Next(0, FishBreedTime));
+                        Grid[i, j] = new MatrixItem(this, MatrixItemType.FISH, i, j, random.Next(0, FishBreedTime));
                     }
                     else if (value < InitialFishPopulation + InitialSharkPopulation)
                     {
-                        Grid[i, j] = new Shark(this, new Point(i, j), random.Next(0, SharkBreedEnergy));
+                        Grid[i, j] = new MatrixItem(this, MatrixItemType.SHARK, i, j, random.Next(0, SharkBreedEnergy));
                     }
                     else {
                         Grid[i, j] = null;
@@ -169,7 +169,7 @@ namespace VSS.Wator.Original
         // Maybe random access to neighbour. If valid, we can return, otherwise check next neighbour, if invalid.
         // !!!!!!!!!!!!
         // find all neighbouring cells of the given position that contain an animal of the given type
-        public Point[] GetNeighbors(Type type, Point position)
+        public Point[] GetNeighbors(MatrixItemType type, Point position)
         {
             Point[] neighbors = new Point[4];
             int neighborIndex;
@@ -181,12 +181,14 @@ namespace VSS.Wator.Original
             i = position.X;
             j = (position.Y + Height - 1) % Height;
             // if we look for empty cells (null) we don't have to check the type using instanceOf
-            if ((type == null) && (Grid[i, j] == null))
+            //if ((type != null) && (Grid[i, j] == null))
+            if ((MatrixItemType.NONE == type) && (Grid[i, j] == null))
             {
                 neighbors[neighborIndex] = new Point(i, j);
                 neighborIndex++;
             }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            //else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            else if (type == Grid[i, j]?.Type)
             {
                 // using instanceOf to check if the type of the animal on grid cell (i/j) is either a shark of a fish
                 // animals that moved in this iteration onto the given cell are not considered
@@ -200,12 +202,14 @@ namespace VSS.Wator.Original
             // look right
             i = (position.X + 1) % Width;
             j = position.Y;
-            if ((type == null) && (Grid[i, j] == null))
+            //if ((type != null) && (Grid[i, j] == null))
+            if ((MatrixItemType.NONE == type) && (Grid[i, j] == null))
             {
                 neighbors[neighborIndex] = new Point(i, j);
                 neighborIndex++;
             }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            //else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            else if (type == Grid[i, j]?.Type)
             {
                 if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
                 {
@@ -216,12 +220,14 @@ namespace VSS.Wator.Original
             // look down
             i = position.X;
             j = (position.Y + 1) % Height;
-            if ((type == null) && (Grid[i, j] == null))
+            //if ((type != null) && (Grid[i, j] == null))
+            if ((MatrixItemType.NONE == type) && (Grid[i, j] == null))
             {
                 neighbors[neighborIndex] = new Point(i, j);
                 neighborIndex++;
             }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            //else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            else if (type == Grid[i, j]?.Type)
             {
                 if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
                 {
@@ -232,12 +238,14 @@ namespace VSS.Wator.Original
             // look left
             i = (position.X + Width - 1) % Width;
             j = position.Y;
-            if ((type == null) && (Grid[i, j] == null))
+            //if ((type != null) && (Grid[i, j] == null))
+            if ((MatrixItemType.NONE == type) && (Grid[i, j] == null))
             {
                 neighbors[neighborIndex] = new Point(i, j);
                 neighborIndex++;
             }
-            else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            //else if ((type != null) && (type.IsInstanceOfType(Grid[i, j])))
+            else if (type == Grid[i, j]?.Type)
             {
                 if ((Grid[i, j] != null) && (!Grid[i, j].Moved))
                 {
@@ -258,26 +266,32 @@ namespace VSS.Wator.Original
         }
 
         // select a random neighbouring cell that contains an animal (or null) of the given type
-        public Point SelectNeighbor(Type type, Point position)
+        public void SelectNeighbor(MatrixItemType type, int x, int y, out int outX, out int outY)
         {
+            // Set default Value for indexes
+            outX = outY = -1;
+
             // first determine _all_ neighbours of the given type
-            Point[] neighbors = GetNeighbors(type, position);
+            Point[] neighbors = GetNeighbors(type, new Point(x, y));
+            Point point;
             if (neighbors.Length > 1)
             {
                 // if more than one cell has been found => return a randomly selected cell
-                return neighbors[random.Next(neighbors.Length)];
+                point = neighbors[random.Next(neighbors.Length)];
             }
             else if (neighbors.Length == 1)
             {
                 // if only a single cell contains an animal of the given type we can save the call to random
-                return neighbors[0];
+                point = neighbors[0];
             }
             else {
                 // return a point with negative coordinates to indicate
                 // that no neighbouring cell has found
                 // return value must be checked by the caller
-                return new Point(-1, -1);
+                point = new Point(-1, -1);
             }
+            outX = point.X;
+            outY = point.Y;
         }
 
         // create a 2D array containing all numbers in the range 0 .. width * height

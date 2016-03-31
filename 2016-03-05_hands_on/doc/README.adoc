@@ -1,0 +1,50 @@
+Waterwolrd Analysis
+===================
+Ing. Thomas Herzog <S1310307011@students.fh-hagenberg.at>
+v1.0, March 31 2016
+
+Folgendes Dokument beschäfftigst sich mit der Analyse und verbessurng des C# Programms 'Waterworld'. +
+Im ersten Kapitel xref:runtime-analysis[Laufzeitanalyse] wird die Laufzeit mit mehreren Durchläufen mit einer bestimmten Konfiguration betrachtet.
+
+[[runtime-analysis]]
+### Laufzeit-Analyse
+Folgendes Bild zeigt die festegestzte Konfiguration für die Testdurchläufe. + 
+
+image::./images/test-settings.JPG[Testkonfiguration]
+Mit dieser Konfiguration wurden *10* Durchläufe vorgenommen, deren ERgebnisse folgend tabelarisch aufgelistet sind.
+
+.Ergebnisse der Testdurchläufe
+[cols=">s,^v,^v,^v,^v",options="header"]
+|=======================
+|Durchlauf|Avg. runtime|Std. Deviation|Run 1|Run 2
+|1|18888|842|19730|18045
+|2|18638|1022|18741|18536
+|3|19194|543|19738|18650
+|4|20099|476|20576|19622
+|5|20036|1599|18437|21635
+|6|18403|386|18016|18790
+|7|19102|818|19921|18283
+|8|20688|2329|18329|23018
+|9|19431|52|19379|19483
+|10|19243|464|19707|18779
+|=======================
+
+### 'Heap'-Analyse
+Dieser Abschnitt beschäftigt sich mit der 'Heap'-Analyse, die aufzeigen wird, wie der Heap sich zur Programmlaufzeit verhält und welche Objekte am 'Heap' in welcher Verteilung vorzufinden sind. 
+
+//TODO: Add heap images here and tables with the objects represented on the heap with which count.
+
+[[software-analysis]]
+## Programmanalyse
+hello
+
+[[refactore-part-1]]# Umstrukturierung Teil 1||Std. Deviation|Run 1|Run 2
+hello
+
+[[refactore-part-2]]
+## Umstrukturierung Teil 2
+hello
+
+[[refactore-part-3]]
+## Umstrukturierung Teil 3
+hello
