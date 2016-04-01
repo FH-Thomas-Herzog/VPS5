@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="VSS.ToiletSimulation.Analysis" Collapsed="true">
+    <Position X="7.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAJAABAAAAAQBAAAAAAAAAAAAAAAAACgA=</HashCode>
+      <FileName>Analysis.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.EarliestDueDateFirstQueue" Collapsed="true">
+    <Position X="2.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAACAAACBAAAAAAAAAAAAAA=</HashCode>
+      <FileName>EarliestDueDateFirstQueue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.ExponentialRandom" Collapsed="true">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAACAA=</HashCode>
+      <FileName>ExponentialRandom.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.NormalRandom" Collapsed="true">
+    <Position X="11" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAAAAAAAAQAAQAAAAACAA=</HashCode>
+      <FileName>NormalRandom.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.Parameters" Collapsed="true">
+    <Position X="7.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAACCAAAAAAAAAAAAAIAAAACQAAAAAAACAAIAAAg=</HashCode>
+      <FileName>Parameters.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.PeopleGenerator" Collapsed="true">
+    <Position X="9.25" Y="1.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAACAAAAAAAAAAAAQAQAAAAEAAAAQAAAAAAAI=</HashCode>
+      <FileName>PeopleGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.Person" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="11" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAACAAIAAAAAACAAAgAEAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Person.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="VSS.ToiletSimulation.ShortestProcessingTimeFirstQueue" Collapsed="true">
+    <Position X="0.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAACAAACBAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ShortestProcessingTimeFirstQueue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.Toilet" Collapsed="true">
+    <Position X="7.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAkAAAAAAAQAQAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Toilet.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.ToiletSimulation" Collapsed="true">
+    <Position X="9.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAABAAAAAA=</HashCode>
+      <FileName>ToiletSimulation.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.FIFOQueue" Collapsed="true">
+    <Position X="5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAACAAACBAAAAAAAAAAAAAA=</HashCode>
+      <FileName>FIFOQueue.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="VSS.ToiletSimulation.Queue" Collapsed="true">
+    <Position X="2.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAIAAAAABAAAQAAAAABAAAAAEAAAAABAA=</HashCode>
+      <FileName>Queue.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Interface Name="VSS.ToiletSimulation.IJob" Collapsed="true">
+    <Position X="7.5" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAACAAIAAAAAACAAAgAEAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>IJob.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="VSS.ToiletSimulation.IQueue" Collapsed="true">
+    <Position X="9.25" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAAAAAAAAAAAAAAAAAAQAAAAABAAAAAEAAAAABAA=</HashCode>
+      <FileName>IQueue.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Tahoma" Size="8.25" />
+</ClassDiagram>
