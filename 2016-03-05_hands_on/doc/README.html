@@ -2144,82 +2144,259 @@ p {
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Folgendes Dokument beschäfftigst sich mit der Analyse und verbessurng des C# Programms <em>Waterworld</em>.<br>
-Im ersten Kapitel <a href="#runtime-analysis">Laufzeitanalyse</a> wird die Laufzeit mit mehreren Durchläufen mit einer bestimmten Konfiguration betrachtet.</p>
+<p>Folgendes Dokument beschäfftigt sich mit der Analyse und Verbessurng des <em>C#</em> Programms <em>Waterworld</em>.<br></p>
 </div>
+<div class="paragraph">
+<p>Die angewandten Verbesserungen wurden in der originalen <em>Visual Studio Solution</em> bzw. den enthaltenen Projekt in folgender Verzeichnisstruktur organisiert:</p>
+</div>
+<div class="paragraph">
+<p><strong class="underline"><mark>Wator/Wator/</mark></strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Orginal</em></p>
+</li>
+<li>
+<p><em>Part1</em> (Point Instanzen vermeiden)</p>
+</li>
+<li>
+<p><em>Part2</em> (SelectNeighbor entfernen)</p>
+</li>
+<li>
+<p><em>Part3</em> (GenerateRandomMatrix, RandomizeMatrix)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Alle Implementierungen von <em>IWatorWorld</em> wurden in der Klasse <em>Version</em> hinzugefügt und können über die Einstellungen des Programms <em>WatorWorld</em> ausgewählt werden.</p>
+</div>
+<div class="paragraph">
+<p>Im ersten Kapitel <a href="#section-analysis-heap"><em>Heap</em>-Analyse</a> wird das Verhalten am <em>Heap</em> der Originalversion zu den Verbesserungen betrachtet.<br></p>
+</div>
+<div class="paragraph">
+<p>Im Kapitel <a href="#section-analysis-runtime">Laufzeit-Analyse</a> wird das Laufzeitverhalten der Originalversion zu den Verbesserungen bettrachtet.<br></p>
+</div>
+<div class="paragraph">
+<p>Im Kapitel <a href="#section-source-improvements">Quelltextverbesserungen</a> werden die drei angewandten Verbesserungen beschrieben und begründet.<br></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-analysis-heap"><a class="anchor" href="#section-analysis-heap"></a><em>Heap</em>-Analyse</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dieses Kapitel beschäftigt sich mit der <em>Heap</em>-Analyse, die aufzeigen wird, wie sich der Heap zur Programmlaufzeit der verschiedenen Programmversionen verhält und welche Objekte am <em>Heap</em> in welcher Verteilung und Häufigkeit vorzufinden sind. Diese Analyseergbenisse werden bei den Verbesserungen benötigt, da sie aufzeigen werden, wo in den verschiedenen Programmversionen Probleme am <em>Heap</em> vorzufinden sind.<br></p>
+</div>
+<div class="paragraph">
+<p>Gleichzeigtig werden die Analyseergebnisse auch aufzeigen, inwiefern sich das Verhalten am <em>Heap</em> durch die angewandten Verbesserungen verändert hat.</p>
+</div>
+<div class="sect2">
+<h3 id="subsection-analysis-heap-original"><a class="anchor" href="#subsection-analysis-heap-original"></a>Ergebnisse: <em>Originalversion</em></h3>
+<div class="paragraph">
+<p>Folgender Teil beschäftigt sich mit den Ergebnissen der <em>Heap</em>-Analyse der Originalversion.</p>
+</div>
+<div id="original-analysis-heap" class="imageblock">
+<div class="content">
+<img src="./images/original-analysis-heap.JPG" alt="Analyseergebnisse der Originalversion">
+</div>
+<div class="title">Figure 1. Verhalten am Heap der "Originalversion"</div>
+</div>
+<div class="paragraph">
+<p>Eklatant fällt hier auf, dass es sehr viele <em>Point</em>-Objekte am Heap gibt, die sehr kurzlebig sind und daher den <em>Grabage Collector</em> stark belasten. Daher sollte hier angesetzt werden, um zu versuchen diese <em>Point</em>-Objekte zu vermeiden.<br></p>
+</div>
+<div class="paragraph">
+<p>Des Weiteren sieht man in Abbildung <a href="#original-analysis-heap">Verhalten am Heap der "Originalversion"</a>, dass die Methode <code>GetNeighbors(Type, Point)</code> die meisten <em>Point</em>-Objekte produziert, daher sollte man hier zuerst ansetzen. In der Methode <code>GetNeighbors(Type, Point)</code> werden alle Nachbarn gesucht und die Methode <code>SelectNeighbor(Type, Point)</code> entscheidet per Zufall welcher Nachbar herangezogen wird. Dadurch das immer alle Nachbarn gesucht aber nur einer herangezogen wird, sind zu viele Zugriffe auf die Matrix erforderlich um die Nachbarn zu erhalten, was die Laufzeit negativ beeinflusst.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="runtime-analysis"><a class="anchor" href="#runtime-analysis"></a>Laufzeit-Analyse</h3>
+<h3 id="part-1-analysis-heap"><a class="anchor" href="#part-1-analysis-heap"></a>Ergebnisse: <em>Point Instanzen vermeiden</em></h3>
 <div class="paragraph">
-<p>Folgendes Bild zeigt die festegestzte Konfiguration für die Testdurchläufe.<br></p>
+<p>Folgende Teil zeigt die Analyseergebnisse der <em>Heap</em>-Analyse der Verbesserung <em>Point Instanzen vermeiden</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/part-1-analysis-heap.JPG" alt="Analyseergebnisse der ersten Verbesserung">
+</div>
+<div class="title">Figure 2. Verhalten am Heap der Verbesserung "Point Instanzen vermeiden"</div>
+</div>
+<div class="paragraph">
+<p>Diese Verbesserung hat erreicht das anstatt <strong><em>~ 94 %</em></strong> nur mehr <strong><em>~ 84 %</em></strong> der Objekte am <em>Heap</em> <em>Point</em>-Instanzen sind. Dadurch ist der <em>Garbage Collector</em> weniger stark ausgelastet, was einen positiven Effekt auf das Laufzeitverhalten hat.<br></p>
+</div>
+<div class="paragraph">
+<p>Trotzdem sei angemerkt, dass sich herausgestellt hat, dass der Ansatz des <em>Random</em>-Zugriff auf die <em>Direction</em> beim Ermitteln der Nachbarn die Laufzeit um <strong><em>~ 500ms</em></strong> verschlechtert, daher wurde der Randomzugriff entfernt. Dadurch wird aber immer in die gleiche Richtung gegangen bzw nach Nachbanr gesucht, was zur Folge hat, dass dies auf der grafischen Asugabe sichtbar wird.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+<div class="sect2">
+<h3 id="part-2-analysis-heap"><a class="anchor" href="#part-2-analysis-heap"></a>Ergebnisse: <em>SelectNeighbor entfernen</em></h3>
+<div class="paragraph">
+<p>Folgender Teil zeigt die Analyseergebnisse der <em>Heap</em>-Analyse der Verbesserung <em>SelectNeighbor entfernen</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/part-2-analysis-heap.JPG" alt="Analyseergebnisse der ersten Verbesserung">
+</div>
+<div class="title">Figure 3. Verhalten am Heap der Verbesserung "SelectNeighbor entfernen"</div>
+</div>
+<div class="paragraph">
+<p>Durch das Entfernen der Methode <code>SelectNeighbor(Type, Point)</code> sind die <em>Point</em>-Objekte nicht mehr die dominanten Objekte am <em>Heap</em>, sondern die <em>Fish</em>-Objekte, die aber nicht zu vermeiden sind, da es nur soviele Fische am <em>Heap</em> gibt, als wie in der Matrix vorhanden. Und die <em>Fish</em>-Objekte sind langlebige Objekte im Unterschied zu den <em>Point</em>-Objekten. Diese Verbesserung hat also den <em>Heap</em> entlastet.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-analysis-runtime"><a class="anchor" href="#section-analysis-runtime"></a>Laufzeit-Analyse</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dieses Kapitel beschäftigt sich mit der <em>Runtime</em>-Analyse der Orginalversion zu den angewandten Verbesserungen. Dieses Kapitel wird aufzeigen wie sich das Laufzeitverhalten der verschiedene Programmversionen verhält und verändert.<br></p>
+</div>
+<div class="paragraph">
+<p>Folgendes Bild zeigt die festegestzte Konfiguration für alle gemachten Testdurchläufe.<br></p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="./images/test-settings.JPG" alt="Testkonfiguration">
 </div>
+<div class="title">Figure 4. Konfiguration der Testdurchläufe</div>
 </div>
 <div class="paragraph">
-<p>Mit dieser Konfiguration wurden <strong>10</strong> Durchläufe vorgenommen, deren ERgebnisse folgend tabelarisch aufgelistet sind.</p>
+<p>Mit dieser Konfiguration wurden <strong>10</strong> Durchläufe vorgenommen, deren Ergebnisse folgend als Screenshots bei den verschiedenen Programmversionen angefügt sind.</p>
+</div>
+<div class="sect2">
+<h3 id="original-analysis-runtime"><a class="anchor" href="#original-analysis-runtime"></a>Ergebnisse: <em>der Originalversion</em></h3>
+<div class="paragraph">
+<p>Folgende Teil zeigt die Analyseergebnisse der <em>Runtime</em>-Analyse der <em>Originalversion</em>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="./images/original_run_10_times.JPG" alt="Testdurchläufe">
 </div>
-<div class="title">Figure 1. Ergebnisse der Testdurchläufe</div>
+<div class="title">Figure 5. Laufzeitverhalten der "Originalversion"</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="true-em-heap-em-analyse"><a class="anchor" href="#true-em-heap-em-analyse"></a><em>Heap</em>-Analyse</h3>
+<h3 id="part-1-analysis-runtime"><a class="anchor" href="#part-1-analysis-runtime"></a>Ergebnisse: <em>Point Instanzen vermeiden</em></h3>
 <div class="paragraph">
-<p>Dieser Abschnitt beschäftigt sich mit der <em>Heap</em>-Analyse, die aufzeigen wird, wie der Heap sich zur Programmlaufzeit verhält und welche Objekte am <em>Heap</em> in welcher Verteilung vorzufinden sind.</p>
-</div>
-<div class="sect3">
-<h4 id="trueoriginalversion"><a class="anchor" href="#trueoriginalversion"></a>Originalversion</h4>
-<div class="paragraph">
-<p>Folgender Teil zeigt die Analyseergebnisse der Originalversion.</p>
+<p>Folgender Teil zeigt die Analyseergebnisse der <em>Runtime</em>-Analyse der Verbesserung <em>Point Instanzen vermeiden</em>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/original-analysis-heap-allocation.JPG" alt="Analyseergebnisse">
+<img src="./images/part_1_run_10_times.JPG" alt="Testdurchläufe">
+</div>
+<div class="title">Figure 6. Laufzeitverhalten der "Point Instanzen vermeiden"</div>
+</div>
+<div class="paragraph">
+<p>Mit dieser ersten Verbesserung wurde die Laufzeit der Anwendung um <strong><em>~ 0.7 sec</em></strong> verbessert.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="part-2-analysis-runtime"><a class="anchor" href="#part-2-analysis-runtime"></a>Ergebnisse: <em>SelectNeighbor entfernen</em></h3>
+<div class="paragraph">
+<p>Folgende Teil zeigt die Analyseergebnisse der <em>Runtime</em>-Analyse dieser angewandten Verbesserung.</p>
+</div>
+<div class="paragraph">
+<div class="title">Laufzeitverhalten: <em>SelectNeighbor entfernen</em></div>
+<p>Folgender Teil zeigt die Analyseergebnisse der <em>Runtime</em>-Analyse der Verbesserung <em>SelectNeighbor entfernen</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/part_2_run_10_times.JPG" alt="Testdurchläufe">
 </div>
 </div>
 <div class="paragraph">
-<p>Eklatant fällt hier auf, dass es sher viele <strong><em>Point</em></strong> Instanzen am Heap gibt, die sehr kurzlebig sind und daher den <em>Grabage Collector</em> stark belasten.</p>
+<p>Mit dieser zweiten Verbesserung wurde die Laufzeit der Anwendung um <strong><em>~ 1.4 sec</em></strong> verbessert.</p>
 </div>
+<div style="page-break-after: always;"></div>
 </div>
-<div class="sect3">
-<h4 id="trueerste-optimierungen"><a class="anchor" href="#trueerste-optimierungen"></a>Erste Optimierungen</h4>
+<div class="sect2">
+<h3 id="part-3-analysis-runtime"><a class="anchor" href="#part-3-analysis-runtime"></a>Ergebnisse von: <em>GenerateRandomMatrix, RandomizeMatrix</em></h3>
 <div class="paragraph">
-<p>Folgender Teil zeigt die Analyseergebnisse nach dem ersten Optimierungsversuch.</p>
+<p>Folgende Teil zeigt die Analyseergebnisse der <em>Runtime</em>-Analyse dieser angewandten Verbesserung.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/part_3_run_10_times.JPG" alt="Testdurchläufe">
+</div>
+<div class="title">Figure 7. Ergebnisse von: GenerateMatrix, RandomizeMatrix modifizieren</div>
+</div>
+<div class="paragraph">
+<p>Mit dieser letzten Verbesserung wurde die Laufzeit der Anwendung um <strong><em>~ 1.8 sec</em></strong> verbessert.</p>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="software-analysis"><a class="anchor" href="#software-analysis"></a>Programmanalyse</h2>
+<h2 id="section-source-improvements"><a class="anchor" href="#section-source-improvements"></a>Quelltextverbesserungen</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>hello</p>
+<p>Folgender Teil beschäftigt sich mit den Optimierungen, die angewendet wurden, um das Laufzeitverhalten zu verbessern. Es wurden drei Verbesserungen angewandt die nachfolgend aufgeführt sind:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#subsection-source-improvements-part-1">Point Instanzen vermeiden</a></p>
+</li>
+<li>
+<p><a href="#subsection-source-improvements-part-2">SelectNeighbor entfernen</a></p>
+</li>
+<li>
+<p><a href="#subsection-source-improvements-part-3">GenerateRandomMatrix, RandomizeMatrix</a></p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="subsection-source-improvements-part-1"><a class="anchor" href="#subsection-source-improvements-part-1"></a>Point Instanzen vermeiden</h3>
+<div class="paragraph">
+<p>Die Methode <code>GetNeighbors(Type, Point)</code> wurde dahingehend werändert, dass nicht mehr alle Nachbarn besucht und zurückgeliefert werden, sondern dass per Zufall, solange die möglichen Nachbarn besucht werden, bis das erwartete Resultat eintritt. Der erste gefundene Nachbar, der die Anforderungen erfüllt, wird zurückgeliefert.<br></p>
 </div>
 <div class="paragraph">
-<p><a id="refactore-part-1"></a># Umstrukturierung Teil 1||Std. Deviation|Run 1|Run 2
-hello</p>
+<p>Siehe hierzu die folgenden Methoden in <em>Part1WatorWorld</em>:</p>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>public Point GetNeighbors(Type type, Point position)</code></p>
+</li>
+<li>
+<p><code>public Point SelectNeighbor(Type type, Point position)</code></p>
+</li>
+</ul>
 </div>
-</div>
-<div class="sect1">
-<h2 id="refactore-part-2"><a class="anchor" href="#refactore-part-2"></a>Umstrukturierung Teil 2</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>hello</p>
+<p>In der Methode <code>SelectNeighbor(Type type, Point position)</code> wurde lediglich folgende Änderung vorgenommen<br>
+<code>Point[] neighbors = new Point[] { GetNeighbors(type, ref position) };</code>. Damit bleibt die restliche Implementierung von Änderungen unbettroffen.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="refactore-part-3"><a class="anchor" href="#refactore-part-3"></a>Umstrukturierung Teil 3</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>hello</p>
+<p>Durch die Änderungen in <code>GetNeighbors(Type, Point)</code> wird das Verhalten teilweise verändert, da andere Wege als bei der Originalversion gegangen werden. Dies könnte als Änderung am Programm ausgelegt werden, wenn dieses Verhalten als essentiell eingestuft wird.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="subsection-source-improvements-part-2"><a class="anchor" href="#subsection-source-improvements-part-2"></a>SelectNeighbor entfernen</h3>
+<div class="paragraph">
+<p>Nachdem die Methode <code>GetNeighbors(Type, Point)</code> so verändert wurde, dass hbier bereits eine einzige Position eines Nachbarn zurückgelifert wird, kann auf die Methode <em>SelectNeighbor</em> verzichtet werden, da die implementierte Logik keine Anwendung mehr findet. Im Zuge dessen wird die Methode <code>GetNeighbors(Type, Point)</code> unbenannt in <code>GetNeighbor(Type, Point)</code>, da diese Methode nur mehr ein Resultat und kein Array mehr zurückliefert. Dadurch wird ein <em>Methoden</em>-Aufruf vermieden und das Durchschleifen bzw. Kopieren (bei <em>Value Types</em>) der Aktualparameter.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="subsection-source-improvements-part-3"><a class="anchor" href="#subsection-source-improvements-part-3"></a>GenerateRandomMatrix, RandomizeMatrix</h3>
+<div class="paragraph">
+<p>Anstatt ein zweidimensionales Array zu verwenden, in dem die Indixes abgebildet werden, wird eine Liste von <em>Point</em>-Objekten beim erstamligen Erstellen der Matrix erstellt und bei jedem Aufruf der Methode <code>ExecuteStep()</code> zufällig neu geordnet. Es werden zwar alle Positionen auf der Matrix über <em>Point</em>-Objekte abgebildet, aber diese <em>Point</em>-Objekte bleiben über die Laufzeit erhalten und werden daher vom <em>Garbage Collector</em> nicht beachtet, da immer eine Referenz auf diese Objekte besteht. Das zufällige Besuchen der Positionen bleibt gewährleistet. Des Weiteren werden alle <em>Animal</em>-Objekte, die in der Methode <code>ExecuteStep()</code> als <em>Moved</em> markiert wurden, in einer Liste gespeichert und nachdem alle Positionen besucht wurden, <em>commited</em>. Dadurch wird ein weiteres Iterieren über alle Positionen vermieden.</p>
+</div>
+<div class="paragraph">
+<p>Siehe dazu die folgenden Methoden in der Klasse <em>Part3WatorWorld</em>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>ExecuteStep()</code></p>
+</li>
+<li>
+<p><code>ShuffelPoints(Point[])</code> (Ersetzt RandomizeMatrix)</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
@@ -2227,7 +2404,7 @@ hello</p>
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2016-03-31 17:01:25 GMTST
+Last updated 2016-04-01 15:20:32 GMTST
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/styles/github.min.css">
