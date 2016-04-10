@@ -15,6 +15,9 @@ namespace RaceConditions
         {
             //myRaceCondition.Run();
             raceConditionFixed.Run();
+
+            // block cosnole window
+            Console.Read();
         }
     }
 }

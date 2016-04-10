@@ -7,36 +7,76 @@ using System.Threading.Tasks;
 
 namespace RaceConditions
 {
+    /// <summary>
+    /// This class implements the fixed version 
+    /// of the provided code smaple which had an race condition on class memeber 'buffer'
+    /// </summary>
     public class RaceConditionExampleFixed
     {
         private const int N = 1000;
         private const int BUFFER_SIZE = 10;
         private double[] buffer;
         private AutoResetEvent signal;
+        private volatile bool done = false;
+
+        // the mutex object used for locking
+        private readonly object mutex = new object();
 
         void Reader()
         {
             var readerIndex = 0;
+
+            // N reads in buffer
             for (int i = 0; i < N; i++)
             {
-                signal.WaitOne();
-                Console.WriteLine(buffer[readerIndex]);
+                // TODO: Not sure if it was intended to block forever !!!!
+                // If producer is done, then we have N values in the array
+                // If this wouldn't be rpesent the this thread could wait forever for the finished producer.
+                if (!done)
+                {
+                    signal.WaitOne();
+                }
+
+                // here we use a mutex to lock the buffer index access
+                lock (mutex)
+                {
+                    Console.WriteLine(buffer[readerIndex]);
+                }
+
+                // get new index and keep it in buffer range
                 readerIndex = (readerIndex + 1) % BUFFER_SIZE;
             }
         }
         void Writer()
         {
             var writerIndex = 0;
+
+            // N writes in buffer
             for (int i = 0; i < N; i++)
             {
-                buffer[writerIndex] = (double)i;
+
+                // here we use a mutex to lock the buffer index access
+                lock (mutex)
+                {
+                    buffer[writerIndex] = (double)i;
+                }
+
+                // notify that element has bee produced
                 signal.Set();
+
+                // calculate new index and keep it in buffer range
                 writerIndex = (writerIndex + 1) % BUFFER_SIZE;
             }
+
+            done = true;
         }
 
         public void Run()
         {
+            Console.WriteLine($"----------------------------------------");
+            Console.WriteLine($"{nameof(RaceConditionExampleFixed)} started");
+            Console.WriteLine($"----------------------------------------");
+
             buffer = new double[BUFFER_SIZE];
             signal = new AutoResetEvent(false);
             // start threads
@@ -45,8 +85,14 @@ namespace RaceConditions
             t1.Start();
             t2.Start();
             // wait
+            Console.WriteLine("waiting for T1");
             t1.Join();
+            Console.WriteLine("waiting for T2");
             t2.Join();
+
+            Console.WriteLine($"----------------------------------------");
+            Console.WriteLine($"{nameof(RaceConditionExampleFixed)} ended");
+            Console.WriteLine($"----------------------------------------");
         }
     }
 }

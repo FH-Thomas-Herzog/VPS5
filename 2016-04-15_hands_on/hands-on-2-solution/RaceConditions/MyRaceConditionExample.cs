@@ -31,12 +31,14 @@ namespace RaceConditions
     {
         // variable for race conditions
         private int number;
+        // the mutex used in therad-safe mode.
         private readonly object mutex = new object();
 
         // the counter for the repeations
         private int counter = 0;
         // flag indicating rae conditions was found
         private volatile bool raceCondititionOccurred = false;
+        // random which generates random values for Thread.Sleep
         private Random random = new Random();
 
         // constants for runtime behaviour
@@ -107,9 +109,6 @@ namespace RaceConditions
             Console.WriteLine($"----------------------------------------");
             Console.WriteLine($"{nameof(MyRaceConditionExample)} finished");
             Console.WriteLine($"----------------------------------------");
-
-            // block cosnole window
-            Console.Read();
         }
 
         /// <summary>
