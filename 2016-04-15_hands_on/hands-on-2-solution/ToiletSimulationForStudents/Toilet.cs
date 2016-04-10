@@ -25,19 +25,19 @@ namespace VSS.ToiletSimulation
 
         public void Run()
         {
+            // Done if queue is completed
             while (!Queue.IsCompleted)
             {
                 IJob job;
-                // Blocked by queue (Uses semaphores)
                 Queue.TryDequeue(out job);
                 if (job != null)
                 {
                     job.Process();
                 }
-                // Could be called at the end if not completed, but other consumer did use the last job.
+                // Job can be null if consumer is wating loop and cannot be served anymore.
                 else
                 {
-                    Console.WriteLine("Ups... Job was null. Shouldn't have happended");
+                    Console.WriteLine("Ups... Job was null.");
                 }
             }
         }

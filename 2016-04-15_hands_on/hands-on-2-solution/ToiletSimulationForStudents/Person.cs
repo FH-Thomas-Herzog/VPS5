@@ -55,7 +55,7 @@ namespace VSS.ToiletSimulation
                     Console.WriteLine(Id + ": OOOOh no, too late ......");
                 }
             }
-
+            
             Analysis.CountJob(this);
         }
 

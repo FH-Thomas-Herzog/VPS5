@@ -10,12 +10,12 @@ namespace VSS.ToiletSimulation
         // number of generated jobs per producer
         public static int JobsPerProducer
         {
-            get { return 20; }
+            get { return 50; }
         }
         // number of consumers
         public static int Consumers
         {
-            get { return 3; }
+            get { return 2; }
         }
         // if true, output of job processing is displayed
         public static bool DisplayJobProcessing

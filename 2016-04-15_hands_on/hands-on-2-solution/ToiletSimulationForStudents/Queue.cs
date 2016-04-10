@@ -9,7 +9,6 @@ namespace VSS.ToiletSimulation
     public abstract class Queue : IQueue
     {
         protected long count = 0;
-        protected int completeCounter;
         protected volatile bool addingCompleted = false;
         protected IPriorityQueue<DateTime, IJob> queue;
 
