@@ -16,14 +16,14 @@ namespace SynchronizationPrimitives
         {
             IList<string> urls = Enumerable.Range(0, 10).Select(i => $"URL_{i}").ToList();
 
+            // pooling example with waiting instead of pooling
+            pollingExample.Run();
+
             // Synchronous implementation
             limitedConnection.DownloadFiles(urls);
 
             // Asynchronous implementation
             limitedConnection.DownloadFilesAsync(urls);
-
-            // pooling
-            pollingExample.Run();
 
             // block sonole
             Console.Read();
