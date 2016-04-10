@@ -37,7 +37,7 @@ namespace VSS.ToiletSimulation
                 // Could be called at the end if not completed, but other consumer did use the last job.
                 else
                 {
-                    Console.WriteLine("Should never be called. Meant queue.dequeue didn't return an job");
+                    Console.WriteLine("Ups... Job was null. Shouldn't have happended");
                 }
             }
         }

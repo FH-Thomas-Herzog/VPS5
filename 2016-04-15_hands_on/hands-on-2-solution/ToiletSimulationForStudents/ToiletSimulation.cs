@@ -8,7 +8,8 @@ namespace VSS.ToiletSimulation
         {
             int randomSeed = new Random().Next();
             //var q = new FIFOQueue();
-            var q = new NetFIFOQueue();
+            //var q = new NetFIFOQueue();
+            var q = new FIFOQueue(500);
             TestQueue(q, randomSeed);
         }
 

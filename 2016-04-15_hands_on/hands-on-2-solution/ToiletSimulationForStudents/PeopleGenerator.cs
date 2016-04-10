@@ -38,6 +38,9 @@ namespace VSS.ToiletSimulation
                 idSeed++;
                 Queue.Enqueue(new Person(random, Name + " - Person " + idSeed.ToString("00")));
             }
+
+            // Mark complete adding if the producer id done with adding
+            Queue.CompleteAdding();
         }
     }
 }
