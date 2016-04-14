@@ -5,12 +5,12 @@ namespace VSS.ToiletSimulation
         // number of producers
         public static int Producers
         {
-            get { return 10; }
+            get { return 2; }
         }
         // number of generated jobs per producer
         public static int JobsPerProducer
         {
-            get { return 50; }
+            get { return 200; }
         }
         // number of consumers
         public static int Consumers

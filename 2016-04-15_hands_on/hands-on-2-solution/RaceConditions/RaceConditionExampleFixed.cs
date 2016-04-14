@@ -17,11 +17,13 @@ namespace RaceConditions
         private const int BUFFER_SIZE = 10;
         private double[] buffer;
         private AutoResetEvent signal;
-        private volatile bool done = false;
 
         // the mutex object used for locking
         private readonly object mutex = new object();
 
+        /// <summary>
+        /// Reader method for reader thread
+        /// </summary>
         void Reader()
         {
             var readerIndex = 0;
@@ -29,13 +31,8 @@ namespace RaceConditions
             // N reads in buffer
             for (int i = 0; i < N; i++)
             {
-                // TODO: Not sure if it was intended to block forever !!!!
-                // If producer is done, then we have N values in the array
-                // If this wouldn't be rpesent the this thread could wait forever for the finished producer.
-                if (!done)
-                {
-                    signal.WaitOne();
-                }
+                // Not sure if it was intended to block forever !!!
+                signal?.WaitOne();
 
                 // here we use a mutex to lock the buffer index access
                 lock (mutex)
@@ -47,6 +44,10 @@ namespace RaceConditions
                 readerIndex = (readerIndex + 1) % BUFFER_SIZE;
             }
         }
+
+        /// <summary>
+        /// Write method for writer thread
+        /// </summary>
         void Writer()
         {
             var writerIndex = 0;
@@ -68,9 +69,15 @@ namespace RaceConditions
                 writerIndex = (writerIndex + 1) % BUFFER_SIZE;
             }
 
-            done = true;
+            // Clear signal if producer is done
+            signal.Set();
+            signal.Close();
+            signal = null;
         }
 
+        /// <summary>
+        /// Runs teh tests.
+        /// </summary>
         public void Run()
         {
             Console.WriteLine($"----------------------------------------");

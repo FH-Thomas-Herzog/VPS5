@@ -8,16 +8,18 @@ namespace VSS.ToiletSimulation
 {
     public abstract class Queue : IQueue
     {
-        protected long count = 0;
+        protected volatile bool empty = true;
+        protected volatile int count = 0;
         protected volatile bool addingCompleted = false;
-        protected IPriorityQueue<DateTime, IJob> queue;
 
-        public abstract int Count { get; }
+        public int Count
+        {
+            get { return count; }
+        }
         public abstract bool IsCompleted { get; }
 
-        protected Queue(SortOrder sortOrder)
+        protected Queue()
         {
-            queue = new BinaryHeap<DateTime, IJob>(sortOrder);
         }
 
         public abstract void Enqueue(IJob job);

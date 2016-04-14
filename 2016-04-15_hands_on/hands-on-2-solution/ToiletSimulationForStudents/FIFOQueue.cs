@@ -23,18 +23,17 @@ namespace VSS.ToiletSimulation
         // semaphore for the consumers
         private SemaphoreSlim consumerSemaphore;
 
-        public override int Count
-        {
-            get
-            {
-                // synchronized read of count value
-                return (int)Interlocked.Read(ref count);
-            }
-        }
+        // prioritiy queue to use
+        protected IPriorityQueue<DateTime, IJob> priorityQueue;
+        // queue list to use
+        IList<IJob> queue;
 
-        // Constants for semaphore max counts
+        // maximum producer count
         private readonly int PRODUCER_MAX_COUNT = Parameters.Producers;
+        // maximum consumer count
         private readonly int CONSUMER_MAX_COUNT = Parameters.Consumers;
+        // true if priority queue shall be used isntead of list
+        private readonly bool isPriorityQueue;
 
         public override bool IsCompleted
         {
@@ -52,21 +51,25 @@ namespace VSS.ToiletSimulation
         /// Initializes this queue and its using semaphores.
         /// The semaphores will get max count set as there are producers and consumer present.
         /// </summary>
-        public FIFOQueue() : base(SortOrder.Descending)
+        public FIFOQueue(Constants.QueueContainer container)
         {
+            isPriorityQueue = Constants.QueueContainer.List == container;
+
+            int capicity = Parameters.Producers * Parameters.JobsPerProducer;
+            if (isPriorityQueue)
+            {
+                priorityQueue = new BinaryHeap<DateTime, IJob>(SortOrder.Descending, capicity);
+            }
+            else {
+                queue = new List<IJob>(capicity);
+            }
+
             producerSemaphore = new SemaphoreSlim(1, PRODUCER_MAX_COUNT);
             consumerSemaphore = new SemaphoreSlim(0, CONSUMER_MAX_COUNT);
         }
 
         public override void Enqueue(IJob job)
         {
-            // close consumer semaphore because no consumer needs to wait anymore
-            if (IsCompleted)
-            {
-                CleanupSemaphore(CONSUMER_MAX_COUNT, ref consumerSemaphore);
-                return;
-            }
-
             // Skip enqueue if completed or null job provided
             if (job != null)
             {
@@ -77,10 +80,19 @@ namespace VSS.ToiletSimulation
                 lock (mutex)
                 {
                     // enqueue job
-                    queue.Enqueue(job.DueDate, job);
+                    if (isPriorityQueue)
+                    {
+                        priorityQueue.Enqueue(job.DueDate, job);
+                    }
+                    else {
+                        queue.Add(job);
+                    }
 
                     // increase counter
                     count++;
+
+                    // cannot be empty here
+                    empty = false;
                 }
 
                 // release for an consumer
@@ -109,15 +121,28 @@ namespace VSS.ToiletSimulation
             // synchronize dequeue from backed queue 
             lock (mutex)
             {
-                if (!queue.IsEmpty)
+                if (!empty)
                 {
                     // dequeue job
-                    job = queue.Dequeue().Value;
+                    if (isPriorityQueue)
+                    {
+                        job = priorityQueue.Dequeue().Value;
+                    }
+                    else {
+                        job = queue[0];
+                        queue.RemoveAt(0);
+                    }
+
                     // decrease counter
                     count--;
+
+                    // mark is empty
+                    empty = (count == 0);
+
                 }
+
                 dequeued = (job != null);
-                produceItems = ((!IsCompleted));// && ((Count == 0) || (Count >= 5)));
+                produceItems = !IsCompleted;
             }
 
             // release for a producer
@@ -125,9 +150,8 @@ namespace VSS.ToiletSimulation
             {
                 producerSemaphore?.Release();
             }
-
             // Close consumer semaphore if queue is completed
-            if (IsCompleted)
+            else
             {
                 CleanupSemaphore(CONSUMER_MAX_COUNT, ref consumerSemaphore);
             }

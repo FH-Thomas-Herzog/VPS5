@@ -6,14 +6,26 @@ using System.Threading.Tasks;
 
 namespace RaceConditions
 {
+    /// <summary>
+    /// Main program which tests the three requested code samples.
+    /// </summary>
     public class Program
     {
-        private static readonly MyRaceConditionExample myRaceCondition = new MyRaceConditionExample();
-        private static readonly RaceConditionExampleFixed raceConditionFixed = new RaceConditionExampleFixed();
 
         private static void Main(string[] args)
         {
-            //myRaceCondition.Run();
+            // implemented simple race condition example
+            SimpleRaceconditionExample simpleRaceCondition = new SimpleRaceconditionExample();
+            // Implemented fix for the race condition example
+            RaceConditionExampleFixed raceConditionFixed = new RaceConditionExampleFixed();
+
+            // simple race conditions (synchrnoized)
+            //simpleRaceCondition.Run(true);
+
+            // simple race conditions (critical)
+            //simpleRaceCondition.Run(false);
+            
+            // the fixed version of the reader / writter example
             raceConditionFixed.Run();
 
             // block cosnole window

@@ -51,7 +51,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="FIFOQueue.cs" />
+    <Compile Include="ToiletQueue.cs" />
     <Compile Include="NetFIFOQueue.cs" />
     <Compile Include="Queue.cs" />
     <Compile Include="NormalRandom.cs" />
