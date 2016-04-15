@@ -6,11 +6,27 @@ namespace VSS.ToiletSimulation
     {
         public static void Main()
         {
+            // Random seed
             int randomSeed = new Random().Next();
-            //var q = new FIFOQueue();
+
+            // .Net FIFO Qeue
             var q = new NetFIFOQueue();
-            //var q = new FIFOQueue(false);
-            //var q = new ToiletQueue(true, ConcurrentMode.ThreadSleep);
+
+            // My FIFOQueue
+            //var q = new FIFOQueue(Constants.QueueContainer.List);
+            //var q = new FIFOQueue(Constants.QueueContainer.PriorityQueue);
+
+            // My ToiletQueue
+            //var q = new ToiletQueue(Constants.QueueContainer.List, Constants.ConcurrentMode.Semaphore);
+            //var q = new ToiletQueue(Constants.QueueContainer.List, Constants.ConcurrentMode.ResetEvent);
+            //var q = new ToiletQueue(Constants.QueueContainer.List, Constants.ConcurrentMode.ThreadSleep);
+            //var q = new ToiletQueue(Constants.QueueContainer.List, Constants.ConcurrentMode.ThreadSpin);
+            //var q = new ToiletQueue(Constants.QueueContainer.PriorityQueue, Constants.ConcurrentMode.Semaphore);
+            //var q = new ToiletQueue(Constants.QueueContainer.PriorityQueue, Constants.ConcurrentMode.ResetEvent);
+            //var q = new ToiletQueue(Constants.QueueContainer.PriorityQueue, Constants.ConcurrentMode.ThreadSleep);
+            //var q = new ToiletQueue(Constants.QueueContainer.PriorityQueue, Constants.ConcurrentMode.ThreadSpin);
+
+            // Test the queue
             TestQueue(q, randomSeed);
         }
 

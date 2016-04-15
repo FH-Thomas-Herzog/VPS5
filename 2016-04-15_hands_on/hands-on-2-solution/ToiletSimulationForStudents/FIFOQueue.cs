@@ -53,7 +53,7 @@ namespace VSS.ToiletSimulation
         /// </summary>
         public FIFOQueue(Constants.QueueContainer container)
         {
-            isPriorityQueue = Constants.QueueContainer.List == container;
+            isPriorityQueue = Constants.QueueContainer.PriorityQueue == container;
 
             int capicity = Parameters.Producers * Parameters.JobsPerProducer;
             if (isPriorityQueue)
