@@ -19,8 +19,6 @@ namespace MandelbrotGenerator
         private int bucket;
         // the bucket offset caused by decimal division
         private int bucketOffset;
-        // global canceled flag for all workers
-        private volatile bool canceled = false;
         // kept reference to riginal area
         private Area area;
         // thje global image all parts get merged too
@@ -51,6 +49,7 @@ namespace MandelbrotGenerator
 
                 workersFinished[i] = false;
                 var worker = new BackgroundWorker();
+                workers[i] = worker;
                 worker.WorkerSupportsCancellation = true;
                 worker.WorkerReportsProgress = false;
                 worker.DoWork += DoWork;
@@ -77,7 +76,6 @@ namespace MandelbrotGenerator
 
                 area = null;
                 image = null;
-                canceled = true;
             }
         }
 
@@ -89,24 +87,28 @@ namespace MandelbrotGenerator
             int endIdx = (startIdx + bucket);
             endIdx = (tuple.Item1 == (Settings.DefaultSettings.Workers - 1)) ? (endIdx + bucketOffset) : endIdx;
 
-            var image = GenerateImage(startIdx, endIdx, tuple.Item2, () => canceled);
+            var image = GenerateImage(startIdx, endIdx, tuple.Item2, () => worker.CancellationPending);
             // On cancelation no result needed
-            if (!canceled)
+            if (!worker.CancellationPending)
             {
                 evt.Result = new Tuple<int, int, int, Bitmap>(tuple.Item1, startIdx, endIdx, image);
             }
 
-            evt.Cancel = canceled;
+            evt.Cancel = worker.CancellationPending;
 
         }
 
-        private void Completed(object sneder, RunWorkerCompletedEventArgs evt)
+        private void Completed(object sender, RunWorkerCompletedEventArgs evt)
         {
+            int workerIdx;
+
             // nothing to notify on cancelation
-            if ((!canceled) && (evt.Error == null) && (evt.Result != null))
+            if ((!evt.Cancelled) && (evt.Error == null) && (evt.Result != null))
             {
                 Tuple<int, int, int, Bitmap> tuple = evt.Result as Tuple<int, int, int, Bitmap>;
+                workerIdx = tuple.Item1;
                 workersFinished[tuple.Item1] = true;
+                bool allFinished = workersFinished.All(a => a);
                 Bitmap workerImage = tuple.Item4;
 
                 // merge worker image to global one
@@ -120,20 +122,39 @@ namespace MandelbrotGenerator
                 }
 
                 // Here we are done
-                if (workersFinished.All(a => a))
+                if (allFinished)
                 {
                     watch.Stop();
 
                     OnCompleted?.Invoke(this, new EventArgs<Tuple<Area, Bitmap, TimeSpan>>(
                                        new Tuple<Area, Bitmap, TimeSpan>(area, this.image, watch.Elapsed)));
 
-                    // release references
-                    area = null;
-                    image = null;
-                    workers = null;
-                    workersFinished = null;
-
                 }
+            }
+            // get index of worker which is not available on cancel
+            else
+            {
+                workerIdx = Array.IndexOf(workers, sender);
+            }
+
+            // If index could be rerieved, couldn't be is worker alreadcy removed from array
+            if (workerIdx >= 0)
+            {
+                workers[workerIdx] = null;
+            }
+
+            // If all workers are done (successfully or canceled)
+            if (workers.All(a => a == null))
+            {
+                // set default
+                bucket = 0;
+                bucketOffset = 0;
+
+                // release references
+                area = null;
+                image = null;
+                workers = null;
+                workersFinished = null;
             }
         }
     }

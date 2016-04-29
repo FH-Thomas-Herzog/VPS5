@@ -1,0 +1,77 @@
+Mandelbrotgenerator
+===================
+Ing. Thomas Herzog <S1310307011@students.fh-hagenberg.at>
+v1.0, April 29 2016
+
+Folgendes Dokument stellt die Dokumentation für die dritte Übung dar. Diese Übung ist in drei Teile unterteilt:
+
+* <<section_sync>>
+* <<section_async_v1>>
+* <<section_async_v2>>
+* <<section_parallel>>
+
+[[section_sync]]
+=== Sync Generator
+Dieser Abschnitt beschäftigt sich mit der synchronen Implementierung. In dieser Version wird das 'Image' synchron erstellt. Damit diese Implementierung wiederverwendet werden kann, wurde die synchrone Implementierung mit folgender Methodenspezifikation implementiert. +
+
+[[listing-generate-image]]
+[source, c#] 
+----
+Bitmap GenerateImage(int startIdx, int endIndex, Area area, Func<bool> cancel);
+----
+Methodenparameter:
+
+* *startIdx* (Der Startindex ab welcher Spalte das Bild generiert werden soll)
+* *endIndex* (Der Endindex bis zu welcher Spalte das Bild generiert werden soll)
+* *area*     (Die 'Area' Instanz mit den anderen Parametern)
+* *cancel*   (Die 'Cancel'-Funktion, über die abgebrochen werden kann)
+
+Daher ist die Implementierung einerseits synchron und andererseits auch asynchron zu verwendbar, da durch die Angabe des startIdx und endIdx, die Berechnung der Pixels auf einen Teil des Bildes beschränkt werden kann.
+
+Siehe link:../hands-on-3/MandelbrotGenerator/SyncImageGenerator.cs[SyncImageGenerator.cs]
+
+[[section_async_v1]]
+=== Async Generator Version 1
+Dieser Abschnitt beschäftigt sich mit der asynchronen Implementierung in der Version 1. In dieser Version wurde ein 'Thread' verwendet, der die Generation des Bildes asynchron abarbeitet. +
+
+Siehe link:../hands-on-3/MandelbrotGenerator/AsyncGeneratorV1.cs[AsyncGeneratorV1.cs]
+
+[[section_async_v2]]
+=== Async Generator Version 2
+Dieser Abschnitt beschäftigt sich mit der asynchronen Implementierung in der Version 2. In dieser Version wurde ein 'BackgroundWorker' verwendet, der die Generation des Bildes asynchron abarbeitet. +
+
+Siehe link:../hands-on-3/MandelbrotGenerator/AsyncGeneratorV2.cs[AsyncGeneratorV2.cs]
+
+[[section_parallel]]
+=== Parallel Generator
+Dieser Abschnitt beschäftigt sich mit der parallelen Implementierung. In dieser Version werden n-'BackgroundWorker' verwendet, welche die Teile des Bildes parallel und asynchron berechnen. Hierbei wird die Arbeit der Bildgeneration auf die 'BackgroundWorker' aufgeteilt und abschließend zu einem Gesamtbild zusammengefügt. Dabei wird die 'area.Height' auf die 'BackgroundWorker' aufgeteilt. Nachdem jeder 'Worker' fertig ist, wird sein Teil des generierten Bildes in das Gesamtbild aufgenommen.
+
+Siehe link:../hands-on-3/MandelbrotGenerator/ParallelGenerator.cs[ParallelGenerator.cs]
+
+[[section_tests]]
+==== Tests
+Folgender Abschnitt beschäftigt sich mit den Tests des Mandelbrotgenerators. +
+Folgende Tests wurden mit einem 'Build' der Anwendung durchgeführt, welcher mit einer 'Release'-Konfiguration und für eine x64 Architektur erstellt wurde.
+
+.Synchron/Parallel Generator
+[width="100%",options="header"]
+|====================
+|Durchlauf|Synchron|Parallel
+|1|2.49|1.13
+|2|2.54|1.08  
+|3|2.60|1.17 
+|4|2.60|1.35  
+|5|2.55|1.10  
+|6|2.63|1.16  
+|7|2.55|1.02  
+|8|2.54|1.03  
+|9|2.56|1.10 
+|10|2.55|1.02  
+|====================
+*Synchroner Generator:* + 
+Mean time: *2.561 sec* + 
+Std deviation: *0.00156556 sec*
+
+*Paralleler Generator:* + 
+Mean time: *1.116 sec* + 
+Std deviation: *1.25169956  sec*
