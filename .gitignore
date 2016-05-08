@@ -284,3 +284,4 @@ $RECYCLE.BIN/
 */**/asciidoc-temp*
 /2016-04-30_hands_on/VPS_A03.zip
 /2016-04-30_hands_on/hands-on-3/VPS_A03.zip
+*.zip
