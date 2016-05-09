@@ -10,7 +10,7 @@ namespace Quandl.UI
 {
     public partial class QuandlViewer : Form
     {
-        public event EventHandler<List<Series>> DataLoaded;
+        public event EventHandler<IList<Series>> DataLoaded;
 
         private QuandlService service;
         private readonly string[] names = { "NASDAQ_MSFT", "NASDAQ_AAPL", "NASDAQ_GOOG" };
@@ -23,14 +23,21 @@ namespace Quandl.UI
             DataLoaded += OnDataLoaded;
         }
 
-        private void displayButton_Click(object sender, EventArgs e)
+        private async void displayButton_Click(object sender, EventArgs e)
         {
             // clear former displayed serieses [for testing]
             chart.Series.Clear();
+
             //SequentialImplementation();
-            Task.Run(() => ParallelImplementation());
+
+            // Parallel implementation
+            //displayButton_Click_parallel(sender, e);
+
+            // Async await implementation
+            displayButton_Click_async(sender, e);
         }
 
+        #region Sequential Implementation
         private void SequentialImplementation()
         {
             List<Series> seriesList = new List<Series>();
@@ -46,8 +53,56 @@ namespace Quandl.UI
             DisplayData(seriesList);
             SaveImage("chart");
         }
+        private StockData RetrieveStockData(string name)
+        {
+            return service.GetData(name);
+        }
 
-        public void OnDataLoaded(object sender, List<Series> allSerieses)
+        private Series GetSeries(List<StockValue> stockValues, string name)
+        {
+            Series series = new Series(name);
+            series.ChartType = SeriesChartType.FastLine;
+
+            int j = 0;
+            for (int i = stockValues.Count - INTERVAL; i < stockValues.Count; i++)
+            {
+                series.Points.Add(new DataPoint(j++, stockValues[i].Close));
+            }
+            return series;
+        }
+
+
+        private Series GetTrend(List<StockValue> stockValues, string name)
+        {
+            double k, d;
+            Series series = new Series(name + " Trend");
+            series.ChartType = SeriesChartType.FastLine;
+
+            var vals = stockValues.Select(x => x.Close).ToArray();
+            LinearLeastSquaresFitting.Calculate(vals, out k, out d);
+
+            int j = 0;
+            for (int i = stockValues.Count - INTERVAL; i < stockValues.Count; i++)
+            {
+                series.Points.Add(new DataPoint(j++, k * i + d));
+            }
+            return series;
+        }
+        #endregion
+
+        #region Parallel Implementation
+        /// <summary>
+        /// Button click handler for the parallel implementation.
+        /// Here we update the Ui via an event handler, because this method will finish right after the task hqas started.
+        /// </summary>
+        /// <param name="sender">the sender of the event</param>
+        /// <param name="e">the event arguments</param>
+        private void displayButton_Click_parallel(object sender, EventArgs e)
+        {
+            Task.Run(() => ParallelImplementation());
+        }
+
+        public void OnDataLoaded(object sender, IList<Series> allSerieses)
         {
             // If invoke is required, because here we could be on another thread
             if (InvokeRequired)
@@ -68,7 +123,7 @@ namespace Quandl.UI
         private void ParallelImplementation()
         {
             // list which holds all runnint main tasks
-            IList<Task<List<Series>>> mainTasks = new List<Task<List<Series>>>(names.Length);
+            IList<Task<IList<Series>>> mainTasks = new List<Task<IList<Series>>>(names.Length);
 
             foreach (var name in names)
             {
@@ -77,7 +132,7 @@ namespace Quandl.UI
                 // create main task
                 var task = Task.Run(() =>
                 {
-                    var seriesList = new List<Series>();
+                    IList<Series> seriesList = new List<Series>();
                     var data = RetrieveStockData(copiedName);
 
                     // run inner tasks
@@ -100,70 +155,86 @@ namespace Quandl.UI
             }
 
             // wait for all main tasks
-            Task.WaitAll(mainTasks.ToArray());
+            var result = Task.WhenAll(mainTasks.ToArray());
 
             // collect and merge results
-            List<Series> allSerieses = new List<Series>();
-            foreach (var task in mainTasks)
-            {
-                allSerieses.AddRange(task.Result);
-            }
 
             // fire event for UI
-            DataLoaded?.Invoke(this, allSerieses);
+            DataLoaded?.Invoke(this, MergeResults(result.Result));
+        }
+        #endregion
+
+        #region Async Await implementation
+        /// <summary>
+        /// Button click handler for the async await implementation.
+        /// Here we have no need for a event handler because await will processed on the UI thread if the result is ready to be processed.
+        /// </summary>
+        /// <param name="sender">the sender of the click event</param>
+        /// <param name="e">the event arguments</param>
+        private async void displayButton_Click_async(object sender, EventArgs e)
+        {
+            DisplayData(MergeResults(await ParallelImplementationAsync()));
+            SaveImage("chart");
         }
 
-        private Task<StockData> RetrieveStockDataAsync(String name)
+        private async Task<IList<Series>[]> ParallelImplementationAsync()
         {
-            return null;
-        }
+            // list which holds all runnint main tasks
+            IList<Task<List<Series>>> mainTasks = new List<Task<List<Series>>>(names.Length);
 
-        private StockData RetrieveStockData(string name)
-        {
-            return service.GetData(name);
-        }
-
-        private Task<Series> GetSeriesAsync(List<StockValue> stockValues, string name)
-        {
-            return null;
-        }
-
-        private Series GetSeries(List<StockValue> stockValues, string name)
-        {
-            Series series = new Series(name);
-            series.ChartType = SeriesChartType.FastLine;
-
-            int j = 0;
-            for (int i = stockValues.Count - INTERVAL; i < stockValues.Count; i++)
+            foreach (var name in names)
             {
-                series.Points.Add(new DataPoint(j++, stockValues[i].Close));
+                var task = LoadAsync(name);
+
+                // remember main task
+                mainTasks.Add(task);
             }
-            return series;
+
+            // wait for all main tasks
+            return await Task.WhenAll(mainTasks.ToArray());
         }
 
-        private Task<Series> GetTrendAsync(List<StockValue> stockValues, string name)
+        private async Task<List<Series>> LoadAsync(String name)
         {
-            return null;
-        }
-
-        private Series GetTrend(List<StockValue> stockValues, string name)
-        {
-            double k, d;
-            Series series = new Series(name + " Trend");
-            series.ChartType = SeriesChartType.FastLine;
-
-            var vals = stockValues.Select(x => x.Close).ToArray();
-            LinearLeastSquaresFitting.Calculate(vals, out k, out d);
-
-            int j = 0;
-            for (int i = stockValues.Count - INTERVAL; i < stockValues.Count; i++)
+            return await Task.Run(async () =>
             {
-                series.Points.Add(new DataPoint(j++, k * i + d));
-            }
-            return series;
+                var seriesList = new List<Series>();
+                var data = await RetrieveStockDataAsync(name);
+
+                // run inner tasks
+                var seriesTask = GetSeriesAsync(data.GetValues(), name);
+                var trendTask = GetTrendAsync(data.GetValues(), name);
+
+                // wait for all inner tasks
+                var result = await Task.WhenAll(seriesTask, trendTask);
+
+                // collect data of inner tasks
+                seriesList.Add(result[0]);
+                seriesList.Add(result[1]);
+
+                // return result of main taks
+                return seriesList;
+            });
         }
 
-        private void DisplayData(List<Series> seriesList)
+        private async Task<StockData> RetrieveStockDataAsync(string name)
+        {
+            return await Task.Run(() => service.GetData(name));
+        }
+
+        private async Task<Series> GetSeriesAsync(List<StockValue> stockValues, string name)
+        {
+            return await Task.Run(() => GetSeries(stockValues, name));
+        }
+
+        private async Task<Series> GetTrendAsync(List<StockValue> stockValues, string name)
+        {
+            return await Task.Run(() => GetTrend(stockValues, name));
+        }
+        #endregion
+
+        #region Helper Methods
+        private void DisplayData(IList<Series> seriesList)
         {
             chart.Series.Clear();
             foreach (Series series in seriesList)
@@ -176,5 +247,21 @@ namespace Quandl.UI
         {
             chart.SaveImage(fileName + ".jpg", ChartImageFormat.Jpeg);
         }
+
+        /// <summary>
+        /// Helper for merging the series to a single list
+        /// </summary>
+        /// <param name="seriesArray">the array of series lists</param>
+        /// <returns>the merged list</returns>
+        private IList<Series> MergeResults(IList<Series>[] seriesArray)
+        {
+            List<Series> allSerieses = new List<Series>();
+            foreach (var list in seriesArray)
+            {
+                allSerieses.AddRange(list);
+            }
+            return allSerieses;
+        }
+        #endregion
     }
 }
