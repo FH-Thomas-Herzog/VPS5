@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Diffusions
@@ -12,6 +13,9 @@ namespace Diffusions
     /// </summary>
     public class ParallelImageGenerator : SyncImageGenerator
     {
+        private CancellationTokenSource cts;
+        private readonly object mutex = new object();
+
         public override Bitmap GenerateBitmap(Area area)
         {
             var matrix = area.Matrix;
@@ -20,36 +24,45 @@ namespace Diffusions
 
             var newMatrix = new double[width, height];
 
-            Parallel.For(0, width, (i, outerState) =>
+            cts = new CancellationTokenSource();
+            ParallelOptions outerOptions = new ParallelOptions()
             {
-                Parallel.For(0, height, (j, innerState) =>
+                CancellationToken = cts.Token,
+                MaxDegreeOfParallelism = MainForm.MAX_PARALLEL_OUTER
+            };
+            ParallelOptions innerOptions = new ParallelOptions()
+            {
+                CancellationToken = cts.Token,
+                MaxDegreeOfParallelism = MainForm.MAX_PARALLEL_INNER
+            };
+
+            try
+            {
+                Parallel.For(0, width, outerOptions, (i, outerState) =>
                 {
-                    // index of directions (p=plux, m=minus)
-                    int jp, jm, ip, im;
-                    // in c# -1 % 50 is not 49 !!!!
-                    jp = (j + height - 1) % height;
-                    jm = (j + 1) % height;
-                    ip = (i + 1) % width;
-                    im = (i + width - 1) % width;
-
-                    newMatrix[i, j] = (
-                        matrix[i, jp] +
-                        matrix[i, jm] +
-                        matrix[ip, j] +
-                        matrix[im, j] +
-                        matrix[ip, jp] +
-                        matrix[im, jm] +
-                        matrix[ip, jm] +
-                        matrix[im, jp]) / 8.0;
-
-                    // stop inner loop
-                    if ((stopRequested) && (!innerState.IsStopped)) { innerState.Stop(); }
+                    try
+                    {
+                        Parallel.For(0, height, innerOptions, (j, innerState) =>
+                        {
+                            try
+                            {
+                                // Calculate the matrix
+                                CalculateMatrix(i, j, height, width, matrix, newMatrix);
+                            }
+                            catch (OperationCanceledException) { /* Nothing to do */ }
+                        });
+                    }
+                    catch (OperationCanceledException) {  /* Nothing to do */ }
                 });
-                // stop outer loop
-                if ((stopRequested) && (!outerState.IsStopped)) { outerState.Stop(); }
-            });
+            }
+            catch (OperationCanceledException)
+            {
+                // Nothing to do
+            }
 
-            // return null if stop requested, because image not needed anymore
+            cts = null;
+
+            // null because image could be broken
             if (stopRequested) return null;
 
             // if stop request occurs here, then we let finish the image generation
@@ -57,7 +70,15 @@ namespace Diffusions
             Bitmap image = new Bitmap(width, height);
             ColorBitmap(newMatrix, width, height, image);
 
+
             return image;
         }
+
+        public override void Stop()
+        {
+            stopRequested = true;
+            cts?.Cancel();
+        }
     }
+
 }

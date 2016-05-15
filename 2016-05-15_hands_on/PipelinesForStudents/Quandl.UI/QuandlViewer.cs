@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
@@ -124,7 +125,6 @@ namespace Quandl.UI
         {
             // list which holds all runnint main tasks
             IList<Task<IList<Series>>> mainTasks = new List<Task<IList<Series>>>(names.Length);
-
             foreach (var name in names)
             {
                 // preserve name
@@ -134,7 +134,7 @@ namespace Quandl.UI
                 {
                     IList<Series> seriesList = new List<Series>();
                     var data = RetrieveStockData(copiedName);
-
+                    
                     // run inner tasks
                     var seriesTask = Task.Run(() => GetSeries(data.GetValues(), copiedName));
                     var trendTask = Task.Run(() => GetTrend(data.GetValues(), copiedName));
@@ -156,8 +156,6 @@ namespace Quandl.UI
 
             // wait for all main tasks
             var result = Task.WhenAll(mainTasks.ToArray());
-
-            // collect and merge results
 
             // fire event for UI
             DataLoaded?.Invoke(this, MergeResults(result.Result));

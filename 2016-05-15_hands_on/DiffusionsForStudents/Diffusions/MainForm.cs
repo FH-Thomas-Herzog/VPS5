@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Diffusions
@@ -13,6 +15,11 @@ namespace Diffusions
         private const int tipSize = 50;
         private const double defaultHeat = 400.0;
 
+        private bool parallel = false;
+        public const int MAX_PARALLEL_OUTER = 10;
+        public const int MAX_PARALLEL_INNER = 2;
+        private readonly object mutex = new object();
+
         public MainForm()
         {
             InitializeComponent();
@@ -22,8 +29,9 @@ namespace Diffusions
             graphics.FillRectangle(Brushes.Azure, 0, 0, pictureBox.Width, pictureBox.Height);
             graphics.Dispose();
 
-            generator = new SyncImageGenerator();
+            generator = new SyncImageGenerator(); parallel = false;
             //generator = new ParallelImageGenerator();
+            //parallel = true;
             generator.ImageGenerated += generator_ImageGenerated;
         }
 
@@ -44,12 +52,46 @@ namespace Diffusions
 
         private void Reheat(double[,] matrix, int x, int y, int width, int height, int size, double val)
         {
-            for (int i = 0; i < size; i++)
+            // Here we need to lock the use of the matrix
+            // for parallel
+            if (parallel)
             {
-                for (int j = 0; j < size; j++)
+                ReheatParallel(matrix, x, y, width, height, size, val);
+            }
+            // For synchronous
+            else
+            {
+                ReheatSynch(matrix, x, y, width, height, size, val);
+            }
+        }
+
+        private void ReheatSynch(double[,] matrix, int x, int y, int width, int height, int size, double val)
+        {
+            // Here we nned to lock the usage of the current area
+            lock (mutex)
+            {
+                for (int i = 0; i < size; i++)
                 {
-                    matrix[(x + i) % width, (y + j) % height] = val;
+                    for (int j = 0; j < size; j++)
+                    {
+                        matrix[(x + i) % width, (y + j) % height] = val;
+                    }
                 }
+            }
+        }
+
+        private void ReheatParallel(double[,] matrix, int x, int y, int width, int height, int size, double val)
+        {
+            // Here we nned to lock the usage of the current area
+            lock (mutex)
+            {
+                Parallel.For(0, size, (i) =>
+                {
+                    Parallel.For(0, size, (j) =>
+                    {
+                        matrix[(x + i) % width, (y + j) % height] = val;
+                    });
+                });
             }
         }
 
@@ -68,7 +110,7 @@ namespace Diffusions
                 currentArea = e.Value.Item1;
                 if (e.Value.Item2 != null)
                     pictureBox.Image = e.Value.Item2;
-                if (generator.Finished)
+                if (generator.StopRequested)
                 {
                     running = false;
                     startButton.Text = "Start";
@@ -76,7 +118,6 @@ namespace Diffusions
                 }
                 else
                 {
-                    running = true;
                     startButton.Text = "Stop";
                     toolStripStatusLabel.Text = "Calculating. Runtime: " + e.Value.Item3 + ")";
                 }
@@ -103,6 +144,7 @@ namespace Diffusions
         {
             Application.Exit();
         }
+
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using (SettingsDialog dialog = new SettingsDialog())
@@ -132,10 +174,12 @@ namespace Diffusions
         {
             if (running)
             {
+                running = false;
                 generator.Stop();
             }
             else
             {
+                running = true;
                 InitArea();
                 UpdateImage(currentArea);
             }
@@ -145,7 +189,9 @@ namespace Diffusions
         {
             generator.ImageGenerated -= generator_ImageGenerated;
             if (running)
+            {
                 Invoke(new Action(generator.Stop));
+            }
         }
     }
 }

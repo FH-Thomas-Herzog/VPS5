@@ -24,23 +24,9 @@ namespace Diffusions
             {
                 for (var j = 0; j < height; j++)
                 {
-                    // index of directions (p=plux, m=minus)
-                    int jp, jm, ip, im;
-                    // in c# -1 % 50 is not 49 !!!!
-                    jp = (j + height - 1) % height;
-                    jm = (j + 1) % height;
-                    ip = (i + 1) % width;
-                    im = (i + width - 1) % width;
+                    // Calculate the matrix
+                    CalculateMatrix(i, j, height, width, matrix, newMatrix);
 
-                    newMatrix[i, j] = (
-                        matrix[i, jp] +
-                        matrix[i, jm] +
-                        matrix[ip, j] +
-                        matrix[im, j] +
-                        matrix[ip, jp] +
-                        matrix[im, jm] +
-                        matrix[ip, jm] +
-                        matrix[im, jp]) / 8.0;
                     // break inner loop
                     if (stopRequested) { break; }
                 }
@@ -48,6 +34,7 @@ namespace Diffusions
                 if (stopRequested) { break; }
             }
 
+            // null because image could be broken
             if (stopRequested) { return null; }
 
             // If stop request occurs here, let finish the image generation
